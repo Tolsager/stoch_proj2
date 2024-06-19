@@ -23,6 +23,13 @@ class GenericSIR(ABC):
 
             self.event_callback(event)
 
+    def update_states(self, increase, decrease):
+        self.states[increase].append(self.states[increase][-1]+1)
+        self.states[decrease].append(self.states[decrease][-1]-1)
+        for key in self.states.keys():
+            if key not in [increase, decrease, "T"]:
+                self.states[key].append(self.states[key][-1])
+
 
     @abstractmethod
     def rates(self):
@@ -42,13 +49,9 @@ class CTMC_SIR3(GenericSIR):
     
     def event_callback(self, event):
         if event == 0:
-            self.states["S"].append(self.states["S"][-1]-1)
-            self.states["I"].append(self.states["I"][-1]+1)
-            self.states["R"].append(self.states["R"][-1])
+            self.update_states(increase="I", decrease="S")
         else:
-            self.states["S"].append(self.states["S"][-1])
-            self.states["I"].append(self.states["I"][-1]-1)
-            self.states["R"].append(self.states["R"][-1]+1)
+            self.update_states(increase="R", decrease="I")
 
 
 class CTMC_SIR_Death(GenericSIR):
@@ -60,20 +63,11 @@ class CTMC_SIR_Death(GenericSIR):
     
     def event_callback(self, event):
         if event == 0:
-            self.states["S"].append(self.states["S"][-1]-1)
-            self.states["I"].append(self.states["I"][-1]+1)
-            self.states["R"].append(self.states["R"][-1])
-            self.states["D"].append(self.states["D"][-1])
+            self.update_states(increase="I", decrease="S")
         elif event == 1:
-            self.states["S"].append(self.states["S"][-1])
-            self.states["I"].append(self.states["I"][-1]-1)
-            self.states["R"].append(self.states["R"][-1]+1)
-            self.states["D"].append(self.states["D"][-1])
+            self.update_states(increase="R", decrease="I")
         elif event == 2:
-            self.states["I"].append(self.states["I"][-1]-1)
-            self.states["D"].append(self.states["D"][-1]+1)
-            self.states["S"].append(self.states["S"][-1])
-            self.states["R"].append(self.states["R"][-1])
+            self.update_states(increase="D", decrease="I")
         
 
 
