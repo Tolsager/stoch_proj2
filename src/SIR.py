@@ -18,7 +18,7 @@ class GenericSIR(ABC):
         self.N = N
         self.t_max = t_max
         self.states = states
-        self.event_counts = np.zeros(len(self.states)-1)
+        self.event_counts = np.zeros(len(self.parameters))
 
     def simulate(self):
         while self.states["T"][-1] < self.t_max and self.states["I"][-1] > 0:
@@ -84,21 +84,40 @@ class CTMC_SIR_Death(GenericSIR):
 
 class CTMC_SIR_BirthDeath(GenericSIR):
     def rates(self):
-        S, I = self.states["S"][-1], self.states["I"][-1]
+        S, I, R = self.states["S"][-1], self.states["I"][-1], self.states["R"][-1]
         beta, gamma, mu, nu = self.parameters
 
-        return np.array([beta*S*I/self.N, gamma*I, mu*I, nu*S])
+        return np.array([beta*S*I/self.N, gamma*I, mu*I, nu*(S+I+R)])
     
     def event_callback(self, event):
-        if event == 0: # Infection
+        if event == 0: # S -> I
             self.update_states(increase="I", decrease="S")
-        elif event == 1: # Recovery
+        elif event == 1: # I -> R
             self.update_states(increase="R", decrease="I")
-        elif event == 2: # Infection death
+        elif event == 2: # I -> D
             self.update_states(increase="D", decrease="I")
-        elif event == 3: # Birth
+        elif event == 3: # S -> S + 1
             self.update_states(increase="S", decrease=None)
 
+
+class CTMC_SIR_BirthDeathReinfection(GenericSIR):
+    def rates(self):
+        S, I, R = self.states["S"][-1], self.states["I"][-1], self.states["R"][-1]
+        beta, gamma, mu, nu, alpha = self.parameters
+
+        return np.array([beta*S*I/self.N, gamma*I, mu*I, nu*(S+I+R), alpha*R])
+    
+    def event_callback(self, event):
+        if event == 0: # S -> I
+            self.update_states(increase="I", decrease="S")
+        elif event == 1: # I -> R
+            self.update_states(increase="R", decrease="I")
+        elif event == 2: # I -> D
+            self.update_states(increase="D", decrease="I")
+        elif event == 3: # S -> S + 1
+            self.update_states(increase="S", decrease=None)
+        elif event == 4: # R -> S
+            self.update_states(increase="S", decrease="R")
 
 
 class CTMC_SIR:
@@ -144,7 +163,7 @@ if __name__ == "__main__":
     t_max = 1000
     I0 = 100
 
-    extended_covid = (0.17, 0.082*9/10, 0.0082, 0.003)
+    extended_covid = (0.17, 0.082*7/10, 0.0082, 0.0003, 0.05)
 
     states = {"S": [N - I0],
               "I": [I0],
@@ -154,7 +173,8 @@ if __name__ == "__main__":
                        }
     # SIR = CTMC_SIR(*flu, N, I0, t_max)
     # SIR = CTMC_SIR_Death(extended_covid, states, N, t_max)
-    SIR = CTMC_SIR_BirthDeath(extended_covid, states, N, t_max)
+    # SIR = CTMC_SIR_BirthDeath(extended_covid, states, N, t_max)
+    SIR = CTMC_SIR_BirthDeathReinfection(extended_covid, states, N, t_max)
 
     SIR.simulate()
     S = SIR.states["S"]
