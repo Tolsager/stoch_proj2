@@ -35,13 +35,16 @@ class CTMC_SIR:
         return self.S, self.I, self.R, self.T
 
 if __name__ == "__main__":
-    beta = 0.1
-    gamma = 0.05
+    ebola = (0.2, 0.1)
+    flu = (1.37383, 0.98622)
+    swine_flu = (7/15, 1/3)
+    rasmus = (0.1, 1/30)
     N = 10_000
     t_max = 2000
-    I0 = 100
+    I0 = 2000
 
-    SIR = CTMC_SIR(beta, gamma, N, I0, t_max)
+    # SIR = CTMC_SIR(*flu, N, I0, t_max)
+    SIR = CTMC_SIR(*rasmus, N, I0, t_max)
     S, I, R, T = SIR.simulate()
     plt.plot(T, I)
     plt.plot(T, S)
