@@ -2,6 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from abc import ABC, abstractmethod
+from enum import Enum
+
+# TODO Event abstraction (if we want to)
+class Event(Enum):
+    INFECTION = 0
+    RECOVERY = 1
+    DEATH = 2
+    BIRTH = 3
 
 
 class GenericSIR(ABC):
@@ -10,6 +18,7 @@ class GenericSIR(ABC):
         self.N = N
         self.t_max = t_max
         self.states = states
+        self.event_counts = np.zeros(len(self.states)-1)
 
     def simulate(self):
         while self.states["T"][-1] < self.t_max and self.states["I"][-1] > 0:
@@ -21,11 +30,14 @@ class GenericSIR(ABC):
 
             event = np.random.choice(range(len(rates)), p=rates/rate)
 
+            self.event_counts[event] += 1
+
             self.event_callback(event)
 
-    def update_states(self, increase, decrease):
+    def update_states(self, increase: str, decrease: str | None):
         self.states[increase].append(self.states[increase][-1]+1)
-        self.states[decrease].append(self.states[decrease][-1]-1)
+        if decrease is not None:
+            self.states[decrease].append(self.states[decrease][-1]-1)
         for key in self.states.keys():
             if key not in [increase, decrease, "T"]:
                 self.states[key].append(self.states[key][-1])
@@ -36,7 +48,7 @@ class GenericSIR(ABC):
         raise NotImplementedError("TODO: Missing 1 line")
 
     @abstractmethod
-    def event_callback(self, event):
+    def event_callback(self, event: Event):
         raise NotImplementedError("TODO: Missing 1 line")
 
 
@@ -69,6 +81,23 @@ class CTMC_SIR_Death(GenericSIR):
         elif event == 2:
             self.update_states(increase="D", decrease="I")
         
+
+class CTMC_SIR_BirthDeath(GenericSIR):
+    def rates(self):
+        S, I = self.states["S"][-1], self.states["I"][-1]
+        beta, gamma, mu, nu = self.parameters
+
+        return np.array([beta*S*I/self.N, gamma*I, mu*I, nu*S])
+    
+    def event_callback(self, event):
+        if event == 0: # Infection
+            self.update_states(increase="I", decrease="S")
+        elif event == 1: # Recovery
+            self.update_states(increase="R", decrease="I")
+        elif event == 2: # Infection death
+            self.update_states(increase="D", decrease="I")
+        elif event == 3: # Birth
+            self.update_states(increase="S", decrease=None)
 
 
 
@@ -115,7 +144,7 @@ if __name__ == "__main__":
     t_max = 1000
     I0 = 100
 
-    extended_covid = (0.17, 0.082*9/10, 0.0082)
+    extended_covid = (0.17, 0.082*9/10, 0.0082, 0.003)
 
     states = {"S": [N - I0],
               "I": [I0],
@@ -124,7 +153,8 @@ if __name__ == "__main__":
               "D": [0]
                        }
     # SIR = CTMC_SIR(*flu, N, I0, t_max)
-    SIR = CTMC_SIR_Death(extended_covid, states, N, t_max)
+    # SIR = CTMC_SIR_Death(extended_covid, states, N, t_max)
+    SIR = CTMC_SIR_BirthDeath(extended_covid, states, N, t_max)
 
     SIR.simulate()
     S = SIR.states["S"]
@@ -133,7 +163,8 @@ if __name__ == "__main__":
     T = SIR.states["T"]
     D = SIR.states["D"]
 
-    print(S[-1], I[-1], R[-1])
+    print(SIR.event_counts)
+    print(S[-1] + I[-1] + R[-1] + D[-1])
     plt.plot(T, I)
     plt.plot(T, S)
     plt.plot(T, R)
