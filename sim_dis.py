@@ -33,13 +33,13 @@ if __name__ == "__main__":
     }
 
     idx_to_disease = {
-        0: "ebola",
-        1: "covid",
-        2: "flu",
-        3: "swine_flu"
+        1: "ebola",
+        2: "covid",
+        3: "flu",
+        4: "swine_flu"
     }
 
-    dis_idx = int(sys.argv[1])
+    dis_idx = int(sys.argv[1]) - 1
 
     disease = idx_to_disease(dis_idx)
 
