@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     dis_idx = int(sys.argv[1]) - 1
 
-    disease = idx_to_disease(dis_idx)
+    disease = idx_to_disease[dis_idx]
 
     parameters = disease_parameters["disease"]
     model = CTMC_SIR(parameters, states, N, t_max,)
