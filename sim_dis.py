@@ -7,7 +7,7 @@ def disease_disappearing(model: GenericSIR, n_sims: int):
     # for i in tqdm.trange(n_sims):
     for i in range(n_sims):
         model.simulate()
-        if model.states["I"][-1] == 0:
+        if model.states["I"][-1] == 0 and model.states["S"][-1] != 0:
             n_disappeared += 1
         model.reset()
     return n_disappeared / n_sims
