@@ -39,7 +39,7 @@ if __name__ == "__main__":
         4: "swine_flu"
     }
 
-    dis_idx = int(sys.argv[1]) - 1
+    dis_idx = int(sys.argv[1])
 
     disease = idx_to_disease[dis_idx]
 
