@@ -29,14 +29,16 @@ if __name__ == "__main__":
         "ebola": (0.2, 0.1),
         "covid": (0.17, 0.082),
         "flu": (1.37383, 0.98622),
-        "swine_flu": (7/15, 1/3)
+        "swine_flu": (7/15, 1/3),
+        "hypo": (1/10, 1/60)
     }
 
     idx_to_disease = {
         1: "ebola",
         2: "covid",
         3: "flu",
-        4: "swine_flu"
+        4: "swine_flu",
+        5: "hypo"
     }
 
     dis_idx = int(sys.argv[1])
