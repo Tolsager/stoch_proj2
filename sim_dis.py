@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     disease = idx_to_disease[dis_idx]
 
-    parameters = disease_parameters["disease"]
+    parameters = disease_parameters[disease]
     model = CTMC_SIR(parameters, states, N, t_max,)
     p_disappeared = disease_disappearing(model, n_sims)
     print(f"{disease} disappearing prob: {p_disappeared}")
