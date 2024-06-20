@@ -1,5 +1,5 @@
 #!/bin/bash
-#BSUB -J dis[0:3]
+#BSUB -J dis[0-3]
 #BSUB -q hpc
 #BSUB -W 1:00
 #BSUB -n 1
