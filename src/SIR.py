@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import copy
 
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -18,6 +19,7 @@ class GenericSIR(ABC):
         self.N = N
         self.t_max = t_max
         self.states = states
+        self.init_states = copy.deepcopy(states)
         self.event_counts = np.zeros(len(self.parameters))
 
     def simulate(self):
@@ -50,9 +52,12 @@ class GenericSIR(ABC):
     @abstractmethod
     def event_callback(self, event: Event):
         raise NotImplementedError("TODO: Missing 1 line")
+    
+    def reset(self):
+        self.states = copy.deepcopy(self.init_states)
 
 
-class CTMC_SIR3(GenericSIR):
+class CTMC_SIR(GenericSIR):
     def rates(self):
         S, I = self.states["S"][-1], self.states["I"][-1]
         beta, gamma = self.parameters
@@ -119,39 +124,6 @@ class CTMC_SIR_BirthDeathReinfection(GenericSIR):
         elif event == 4: # R -> S
             self.update_states(increase="S", decrease="R")
 
-
-class CTMC_SIR:
-    def __init__(self, beta: float, gamma: float, N: int, I0: int, t_max: float):
-        self.beta = beta
-        self.gamma = gamma
-        self.N = N
-        self.t_max = t_max
-        self.I0 = I0
-        self.S = [N-I0]
-        self.I = [I0]
-        self.R = [0]
-        self.T = [0]
-    
-    def simulate(self):
-        while self.T[-1] < self.t_max and self.I[-1] > 0:
-            a = self.beta * self.S[-1] * self.I[-1] / self.N
-            b = self.gamma * self.I[-1]
-
-            p1 = a / (a+b)
-            u1 = np.random.rand()
-            u2 = np.random.rand()
-
-            if u1 < p1:
-                self.S.append(self.S[-1]-1)
-                self.I.append(self.I[-1]+1)
-                self.R.append(self.R[-1])
-            else:
-                self.I.append(self.I[-1]-1)
-                self.R.append(self.R[-1]+1)
-                self.S.append(self.S[-1])
-            
-            self.T.append(self.T[-1]- np.log(u2) / (a + b))
-        return self.S, self.I, self.R, self.T
 
 if __name__ == "__main__":
     ebola = (0.2, 0.1)
