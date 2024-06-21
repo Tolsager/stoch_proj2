@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import copy
 
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -17,6 +18,7 @@ class GenericSIR(ABC):
         self.parameters = parameters
         self.t_max = t_max
         self.states = states
+        self.init_states = copy.deepcopy(states)
         self.event_counts = np.zeros(len(self.parameters))
 
     def simulate(self):
@@ -49,6 +51,9 @@ class GenericSIR(ABC):
     @abstractmethod
     def event_callback(self, event: Event):
         raise NotImplementedError("TODO: Missing 1 line")
+    
+    def reset(self):
+        self.states = copy.deepcopy(self.init_states)
 
 
 # Simple SIR model 
