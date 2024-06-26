@@ -3,14 +3,8 @@ import matplotlib.pyplot as plt
 import copy
 
 from abc import ABC, abstractmethod
-from enum import Enum
 
-# TODO Event abstraction (if we want to)
-class Event(Enum):
-    INFECTION = 0
-    RECOVERY = 1
-    DEATH = 2
-    BIRTH = 3
+HOSPITAL_CAPACITY = 0.0025*50_000
 
 
 class GenericSIR(ABC):
@@ -49,7 +43,7 @@ class GenericSIR(ABC):
         raise NotImplementedError("TODO: Missing 1 line")
 
     @abstractmethod
-    def event_callback(self, event: Event):
+    def event_callback(self, event: int):
         raise NotImplementedError("TODO: Missing 1 line")
     
     def reset(self):
@@ -182,10 +176,12 @@ class CTMC_SIR_Severe(GenericSIR):
             group = np.random.choice(["S", "I", "Si", "R"], p=living/np.sum(living))
             self.update_states(increase="Dn", decrease=group)
 
+
 class CTMC_SIR_Vax(GenericSIR):
-    def __init__(self, parameters: tuple, states, t_max: float, vaccination_rollout: int = None, blocked: bool = False):
+    def __init__(self, parameters: tuple, states, t_max: float, vaccination_rollout: int = None, blocked: bool = False, vaccination_threshold: float = 0.2):
         self.use_blocked = blocked
         self.vaccination_rollout = vaccination_rollout if vaccination_rollout is not None else t_max
+        self.second_vaccination_threshold = vaccination_threshold
         super().__init__(parameters, states, t_max)
 
     def rates(self):
@@ -200,8 +196,8 @@ class CTMC_SIR_Vax(GenericSIR):
         hospitalized_death = h_disease_death*h_recovery/(1-h_disease_death)
         
         # Vaccinations
-        v2_rate = vaccination if V1 + V2 > 0.5*n_living else 0
-        v1_rate = vaccination if S > 0 and self.states["T"][-1] > self.vaccination_rollout  else 0 
+        v2_rate = vaccination if V1 + V2 > self.second_vaccination_threshold*n_living else 0
+        v1_rate = vaccination if S > 0 and self.states["T"][-1] > self.vaccination_rollout else 0 
         if v2_rate != 0 and v1_rate != 0:
             v2_rate = 0.5 * vaccination
             v1_rate = 0.5 * vaccination
@@ -234,7 +230,7 @@ class CTMC_SIR_Vax(GenericSIR):
         elif event == 3: # R -> S
             self.update_states(increase="S", decrease="R")
         elif event == 4: # I -> Hi if space otherwise I -> Si
-            # Check if there is room in the hospital, otherwise the patient dies
+            # If hospital is full, then just add to severely infected
             if self.use_blocked and self.states["Hi"][-1] > HOSPITAL_CAPACITY:
                  self.update_states(increase="Si", decrease="I")
             else: 
@@ -266,9 +262,9 @@ class CTMC_SIR_Vax(GenericSIR):
 # Rates for specific diseases (per day)  
 
 # Natural causes rates
-# In 2023 57500 where born in denmark (with population 5.9 million) 
+# In 2023 57500 were born in denmark (with population 5.9 million) 
 # And the expected life span is 81 years 
-natural_causes_rates = {"Birth": 57500 / (5900000 * 365), "Death": 1/(81 * 365)} 
+natural_causes_rates = {"Birth": 57_500 / (5_900_000 * 365), "Death": 1/(81 * 365)} 
 
 # Vaccination rates
 vaccination_rates = {"Vaccination": 100, "Vaccination1 I": 5/10, "Vaccination2 I": 1/10}
@@ -284,7 +280,7 @@ corona_rates = {"Infection": 0.17,  # Infection without any precautions (from th
                 "Death Severe": 0.5, # Death when having severe corona without hospitalization
                 "Death Treatment": 0.1, # Death when having severe corona with hospitalization
                 "Reinfection": 1/60, # Reinfection rates could not be found, but we say that on average you can get reinfected every 2 months 
-                "Severe": 130/3300, # Server cases is calculated from 130_000 hospitalizations, and 3_300_000 cases. 
+                "Severe": 130/3300, # Severe cases is calculated from 130_000 hospitalizations, and 3_300_000 cases. 
                 "Severe Recovery": 3, # Times longer recovery when having servere corona
                 "Severe Recovery Treatment": 2, # Times longer recovery when having servere corona and hospitalized
                 }
@@ -306,7 +302,7 @@ corona_rates = {"Infection": 0.17,  # Infection without any precautions (from th
 
 if __name__ == "__main__":
     N = 50_000
-    t_max = 1000
+    t_max = 365*3
     I0 = 100
     HOSPITAL_CAPACITY = 0.0025*N
     
@@ -395,7 +391,7 @@ if __name__ == "__main__":
     # SIR = CTMC_SIR_Severe(covid_severe_disease, states_severe, t_max)
     
     # Corona with birth, death, reinfection, severe cases and vaccination 
-    SIR = CTMC_SIR_Vax(covid_vax, states_vax, t_max, blocked=True)
+    SIR = CTMC_SIR_Vax(covid_vax, states_vax, t_max, blocked=True, vaccination_rollout=t_max+1, vaccination_threshold=0.5)
 
     SIR.simulate()
     S = SIR.states["S"]
@@ -423,14 +419,18 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid()
     plt.xlabel("Days")
+    plt.tight_layout()
+    plt.savefig("no_vax_all_full.pdf")
     plt.show()
 
     plt.plot(T, np.array(Si) + np.array(Hi), label="Severely infected") 
     plt.plot(T, Hi, label="Hospitalized")
-    plt.hlines(HOSPITAL_CAPACITY, 0, t_max, colors="r", linestyles="dashed", label="Hospital capacity")
+    plt.hlines(HOSPITAL_CAPACITY, 0, T[-1], colors="r", linestyles="dashed", label="Hospital capacity")
     plt.legend()
     plt.grid()
     plt.xlabel("Days")
+    plt.tight_layout()
+    plt.savefig("no_vax_hospital_full.pdf")
     plt.show()
 
 
