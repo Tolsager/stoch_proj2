@@ -4,7 +4,7 @@ import copy
 
 from abc import ABC, abstractmethod
 
-from SIR_parameters import covid_vax, covid_severe_disease, covid_birth_death, extended_covid, N, I0, HOSPITAL_CAPACITY, t_max
+from src.SIR_parameters import covid_vax, covid_severe_disease, covid_birth_death, extended_covid, N, I0, HOSPITAL_CAPACITY, t_max
 
 
 class GenericSIR(ABC):
@@ -203,7 +203,7 @@ class CTMC_SIR_Vax(GenericSIR):
             v1_rate = 0.5 * vaccination
         
         # Exponential rates for 
-        return np.array([infection*S*(I+Si)/n_living,                # infection
+        return np.array([infection*S*(I+Si)/n_living,           # infection
                          recovery*I,                            # recovery  
                          disease_death*I,                       # disease_death
                          reinfection*R,                         # reinfection

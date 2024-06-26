@@ -1,4 +1,9 @@
-# Rates for specific diseases (per day)  
+N = 50_000
+t_max = 365*3
+I0 = 100
+HOSPITAL_CAPACITY = 0.0025*N
+
+# Rates for specific diseases (per day)
 
 # Natural causes rates
 # In 2023 57500 were born in denmark (with population 5.9 million) 
@@ -38,11 +43,6 @@ corona_rates = {"Infection": 0.17,  # Infection without any precautions (from th
 #                 "Severe Recovery": 3, # Times longer recovery when having servere corona
 #                 "Severe Recovery Treatment": 2, # Times longer recovery when having servere corona and hospitalized
 #                 }
-
-N = 50_000
-t_max = 365*3
-I0 = 100
-HOSPITAL_CAPACITY = 0.0025*N
 
 # For birth and death
 covid_birth_death =  [corona_rates["Infection"], # Infection rate
