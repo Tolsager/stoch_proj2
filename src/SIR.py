@@ -207,7 +207,7 @@ class CTMC_SIR_Vax(GenericSIR):
             v1_rate = 0.5 * vaccination
         
         # Exponential rates for 
-        return np.array([infection*S*I/n_living,                # infection
+        return np.array([infection*S*(I+Si)/n_living,                # infection
                          recovery*I,                            # recovery  
                          disease_death*I,                       # disease_death
                          reinfection*R,                         # reinfection
@@ -218,8 +218,8 @@ class CTMC_SIR_Vax(GenericSIR):
                          Hi*hospitalized_death,                 # hospitalized_death
                          v1_rate,                               # vaccination round 1
                          v2_rate,                               # vaccination round 2                         
-                         v_infection1*infection*V1*I/n_living,  # vaxed infected
-                         v_infection2*infection*V2*I/n_living,  # vaxed infected
+                         v_infection1*infection*V1*(I+Si)/n_living,  # vaxed infected
+                         v_infection2*infection*V2*(I+Si)/n_living,  # vaxed infected
                          natural_birth*n_living,                # natural_birth
                          natural_death*n_living,])              # natural_death
 
